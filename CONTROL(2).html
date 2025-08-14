@@ -1,0 +1,230 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fractals Control Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .card {
+            transition: transform 0.3s;
+            display: flex;
+            align-items: center;
+        }
+        .card:hover {
+            transform: scale(1.03);
+        }
+        .card-img {
+            width: 300px;
+            height: 150px;
+            object-fit: cover;
+            cursor: pointer;
+        }
+        .card-title {
+            cursor: pointer;
+        }
+        #program-frame {
+            width: 100%;
+            height: 600px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+        }
+        .audio-player {
+            width: 100%;
+            max-width: 300px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-6">
+    <div class="container mx-auto max-w-5xl bg-white shadow-lg rounded-lg p-6">
+        <h1 class="text-4xl font-bold text-center mb-8 text-indigo-600">📚 Fractals Collection</h1>
+        <p class="text-center mb-6 text-gray-600">Quản lý và khám phá bộ sưu tập các chương trình fractal của bạn.</p>
+
+        <!-- Form Thêm Chương Trình -->
+        <div class="mb-8">
+            <h2 class="text-xl font-semibold text-indigo-600 mb-4">Thêm Chương Trình Mới</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <input id="title" type="text" placeholder="Tiêu đề chương trình" class="border rounded p-2 w-full" />
+                <input id="description" type="text" placeholder="Mô tả ngắn (2 dòng)" class="border rounded p-2 w-full" />
+                <input id="url" type="text" placeholder="URL chương trình (VD: https://...)" class="border rounded p-2 w-full" />
+                <div class="flex flex-col gap-2">
+                    <label for="image" class="text-sm font-medium">Chọn ảnh minh họa:</label>
+                    <input id="image" type="file" accept="image/*" class="border rounded p-2" />
+                </div>
+                <div class="flex flex-col gap-2">
+                    <label for="audio" class="text-sm font-medium">Chọn file âm thanh:</label>
+                    <input id="audio" type="file" accept="audio/*" class="border rounded p-2" />
+                </div>
+            </div>
+            <button onclick="addProgram()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded">➕ Thêm Chương Trình</button>
+        </div>
+
+        <!-- Danh Sách Chương Trình -->
+        <div id="programList" class="grid grid-cols-1 gap-6"></div>
+
+        <!-- Iframe Hiển Thị Chương Trình -->
+        <div class="mt-8 flex justify-center">
+            <iframe id="program-frame" src="" class="hidden"></iframe>
+        </div>
+    </div>
+
+    <script>
+        let programs = JSON.parse(localStorage.getItem("fractalPrograms")) || [];
+
+        function renderPrograms() {
+            const programList = document.getElementById("programList");
+            programList.innerHTML = "";
+
+            programs.forEach((program, index) => {
+                const div = document.createElement("div");
+                div.className = "card bg-white rounded-lg shadow-lg overflow-hidden cursor-pointer";
+                div.onclick = () => loadProgram(program.url);
+                div.innerHTML = `
+                    <img src="${program.image || 'https://via.placeholder.com/400x150?text=Fractal'}" alt="${program.title}" class="card-img" onclick="event.stopPropagation(); window.open('${program.url}', '_blank')">
+                    <div class="p-4 flex-1">
+                        <h2 class="text-xl font-semibold text-gray-800 card-title" onclick="loadProgram('${program.url}')">${program.title}</h2>
+                        <p class="text-gray-600 text-sm">${program.description}</p>
+                        ${program.audio ? `
+                            <div class="audio-container mt-2">
+                                <audio controls class="audio-player">
+                                    <source src="${program.audio}" type="audio/mpeg">
+                                    Trình duyệt không hỗ trợ audio.
+                                </audio>
+                            </div>
+                        ` : ''}
+                        <div class="flex gap-2 mt-2">
+                            <button onclick="event.stopPropagation(); deleteProgram(${index})" class="bg-red-400 text-white px-2 py-1 rounded">🗑️ Xoá</button>
+                        </div>
+                    </div>
+                `;
+                programList.appendChild(div);
+            });
+
+            localStorage.setItem("fractalPrograms", JSON.stringify(programs));
+        }
+
+        function addProgram() {
+            const title = document.getElementById("title").value.trim();
+            const description = document.getElementById("description").value.trim();
+            const url = document.getElementById("url").value.trim();
+            const imageFile = document.getElementById("image").files[0];
+            const audioFile = document.getElementById("audio").files[0];
+
+            if (!title || !description || !url) {
+                alert("Vui lòng nhập đầy đủ tiêu đề, mô tả và URL.");
+                return;
+            }
+
+            const programData = { title, description, url };
+
+            // Xử lý upload ảnh
+            if (imageFile) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    programData.image = e.target.result;
+                    // Xử lý upload âm thanh
+                    if (audioFile) {
+                        const audioReader = new FileReader();
+                        audioReader.onload = (e) => {
+                            programData.audio = e.target.result;
+                            programs.push(programData);
+                            renderPrograms();
+                            clearForm();
+                        };
+                        audioReader.readAsDataURL(audioFile);
+                    } else {
+                        programs.push(programData);
+                        renderPrograms();
+                        clearForm();
+                    }
+                };
+                reader.readAsDataURL(imageFile);
+            } else if (audioFile) {
+                // Chỉ có âm thanh, không có ảnh
+                const audioReader = new FileReader();
+                audioReader.onload = (e) => {
+                    programData.audio = e.target.result;
+                    programs.push(programData);
+                    renderPrograms();
+                    clearForm();
+                };
+                audioReader.readAsDataURL(audioFile);
+            } else {
+                // Không có ảnh hoặc âm thanh
+                programs.push(programData);
+                renderPrograms();
+                clearForm();
+            }
+        }
+
+        function clearForm() {
+            document.getElementById("title").value = "";
+            document.getElementById("description").value = "";
+            document.getElementById("url").value = "";
+            document.getElementById("image").value = "";
+            document.getElementById("audio").value = "";
+        }
+
+        function deleteProgram(index) {
+            if (confirm("Bạn có chắc muốn xoá chương trình này?")) {
+                programs.splice(index, 1);
+                renderPrograms();
+            }
+        }
+
+        function loadProgram(url) {
+            const iframe = document.getElementById("program-frame");
+            iframe.src = url;
+            iframe.classList.remove("hidden");
+            window.scrollTo({ top: iframe.offsetTop, behavior: "smooth" });
+        }
+
+        // Initialize
+        document.addEventListener("DOMContentLoaded", () => {
+            renderPrograms();
+        });
+    </script>
+</body>
+</html>
