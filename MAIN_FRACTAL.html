@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fractal Notes - Ghi chú ứng dụng Fractal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --accent: #4cc9f0;
+            --dark: #1d3557;
+            --light: #f8f9fa;
+            --gray: #6c757d;
+            --success: #4cc9f0;
+            --warning: #f77f00;
+            --danger: #d62828;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7ff;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .search-container {
+            display: flex;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #ddd;
+            border-radius: 50px;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+
+        .search-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .search-btn:hover {
+            background: var(--secondary);
+        }
+
+        .notes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+        }
+
+        .note-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .note-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+        }
+
+        .note-image {
+            height: 180px;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .note-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s;
+        }
+
+        .note-card:hover .note-image img {
+            transform: scale(1.05);
+        }
+
+        .note-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(67, 97, 238, 0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .note-content {
+            padding: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .note-title {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+            color: var(--dark);
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .note-title:hover {
+            color: var(--primary);
+        }
+
+        .note-description {
+            color: var(--gray);
+            margin-bottom: 15px;
+            flex: 1;
+        }
+
+        .note-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: auto;
+        }
+
+        .voice-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 8px 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .voice-btn:hover {
+            background: #3ba7c7;
+            transform: translateY(-2px);
+        }
+
+        .voice-btn i {
+            font-size: 1rem;
+        }
+
+        .note-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: gap 0.3s;
+        }
+
+        .note-link:hover {
+            gap: 10px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray);
+        }
+
+        .close-modal:hover {
+            color: var(--danger);
+        }
+
+        .audio-player {
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--dark);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 50px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            display: none;
+            z-index: 2000;
+        }
+
+        @media (max-width: 768px) {
+            .notes-grid {
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            }
+            
+            header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-shapes"></i> Fractal Notes</h1>
+            <p>Trung tâm ghi chú và truy cập các ứng dụng Fractal</p>
+        </header>
+
+        <div class="search-container">
+            <input type="text" class="search-input" placeholder="Tìm kiếm ứng dụng..." id="searchInput">
+            <button class="search-btn"><i class="fas fa-search"></i></button>
+        </div>
+
+        <div class="notes-grid" id="notesGrid">
+            <!-- Các ghi chú sẽ được tạo ra bởi JavaScript -->
+        </div>
+    </div>
+
+    <!-- Modal cho phát âm thanh -->
+    <div class="modal" id="audioModal">
+        <div class="modal-content">
+            <span class="close-modal" id="closeModal">&times;</span>
+            <h3>Phát mô tả âm thanh</h3>
+            <div class="audio-player">
+                <audio controls id="audioPlayer">
+                    <source src="" type="audio/mpeg">
+                    Trình duyệt của bạn không hỗ trợ phát âm thanh.
+                </audio>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast thông báo -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // Dữ liệu các ứng dụng
+        const apps = [
+            {
+                name: "2hamKoch_curve",
+                url: "https://maitheduy.github.io/Fractals/2hamKoch_curve",
+                image: "https://images.unsplash.com/photo-1618005198919-d3d4b5a92ead?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+                description: "Ứng dụng tạo đường cong Koch với 2 ham số. Trực quan hóa các fractal toán học một cách tương tác.",
+                audio: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav"
+            },
+            {
+                name: "3D系列",
+                url: "https://maitheduy.github.io/Fractals/3D%E7%B3%BB%E5%88%97",
+                image: "https://images.unsplash.com/photo-1551033406-611cf9a28f67?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+                description: "Bộ sưu tập các mô hình 3D fractal. Khám phá không gian ba chiều với các cấu trúc hình học phức tạp.",
+                audio: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav"
+            },
+            {
+                name: "Attractor4D_lập_thể_trực_tiếp",
+                url: "https://maitheduy.github.io/Fractals/Attractor4D_l%E1%BA%ADp_th%E1%BB%83_tr%E1%BB%B1c_ti%E1%BA%BFp",
+                image: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+                description: "Mô phỏng attractor 4 chiều với lập thể trực tiếp. Trải nghiệm các hệ thống động học phức tạp.",
+                audio: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav"
+            },
+            {
+                name: "Attractor_4D",
+                url: "https://maitheduy.github.io/Fractals/Attractor_4D",
+                image: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+                description: "Trực quan hóa các attractor 4 chiều. Khám phá sự phức tạp của hệ thống động học không tuyến tính.",
+                audio: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav"
+            },
+            {
+                name: "Chai_Klein",
+                url: "https://maitheduy.github.io/Fractals/Chai_Klein",
+                image: "https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+                description: "Mô phỏng chai Klein - một bề mặt phi định hướng. Trải nghiệm cấu trúc toán học độc đáo.",
+                audio: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav"
+            },
+            {
+                name: "Dán_chai_Klein",
+                url: "https://maitheduy.github.io/Fractals/D%C3%A1n_chai_Klein",
+                image: "https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+                description: "Ứng dụng dán và biến đổi chai Klein. Tương tác với các bề mặt拓扑 học phức tạp.",
+                audio: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav"
+            },
+            {
+                name: "Hung_Projection",
+                url: "https://maitheduy.github.io/Fractals/Hung_Projection",
+                image: "https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+                description: "Hệ thống chiếu hình học đa chiều. Trực quan hóa các phép chiếu không gian phức tạp.",
+                audio: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav"
+            },
+            {
+                name: "IFS_Parabol_tông_quát",
+                url: "https://maitheduy.github.io/Fractals/IFS_Parabol_t%C3%B4ng_qu%C3%A1t",
+                image: "https://images.unsplash.com/photo-1509228626585-9a40973f3d30?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+                description: "Hệ thống hàm lặp (IFS) với parabol tổng quát. Tạo ra các fractal từ các phép biến đổi toán học.",
+                audio: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav"
+            },
+            {
+                name: "KochCurveDerivative",
+                url: "https://maitheduy.github.io/Fractals/KochCurveDerivative",
+                image: "https://images.unsplash.com/photo-1509228626585-9a40973f3d30?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+                description: "Trực quan hóa đạo hàm của đường cong Koch. Khám phá các thuộc tính toán học của fractal.",
+                audio: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav"
+            },
+            {
+                name: "MAIN",
+                url: "https://maitheduy.github.io/Fractals/MAIN",
+                image: "https://images.unsplash.com/photo-1551033406-611cf9a28f67?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+                description: "Trang chính của bộ sưu tập Fractal. Cổng truy cập vào tất cả các ứng dụng fractal.",
+                audio: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav"
+            },
+            {
+                name: "MatcongParabol",
+                url: "https://maitheduy.github.io/Fractals/MatcongParabol",
+                image: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+                description: "Mô phỏng mặt cong parabol. Trực quan hóa các bề mặt toán học trong không gian 3D.",
+                audio: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav"
+            },
+            {
+                name: "Matran_IFS_parabol",
+                url: "https://maitheduy.github.io/Fractals/Matran_IFS_parabol",
+                image: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+                description: "Ma trận IFS với parabol. Tạo fractal từ các phép biến đổi ma trận và parabol.",
+                audio: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav"
+            },
+            {
+                name: "Proj_Hung2",
+                url: "https://maitheduy.github.io/Fractals/Proj_Hung2",
+                image: "https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+                description: "Hệ thống chiếu hình học phiên bản 2. Trực quan hóa các phép chiếu không gian nâng cao.",
+                audio: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav"
+            },
+            {
+                name: "Proj_Hung3",
+                url: "https://maitheduy.github.io/Fractals/Proj_Hung3",
+                image: "https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+                description: "Hệ thống chiếu hình học phiên bản 3. Trải nghiệm các phép chiếu không gian phức tạp nhất.",
+                audio: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav"
+            },
+            {
+                name: "Project_line_Hung",
+                url: "https://maitheduy.github.io/Fractals/Project_line_Hung",
+                image: "https://images.unsplash.com/photo-1509228626585-9a40973f3d30?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+                description: "Chiếu đường thẳng trong không gian. Trực quan hóa các phép chiếu hình học cơ bản.",
+                audio: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav"
+            },
+            {
+                name: "Sierpinski_Dát_Vàng_Mält_câu",
+                url: "https://maitheduy.github.io/Fractals/Sierpinski_D%C3%A1t_V%C3%A0ng_M%C3%A4lt_c%C3%A2u",
+                image: "https://images.unsplash.com/photo-1551033406-611cf9a28f67?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+                description: "Tam giác Sierpinski với tỷ lệ vàng. Khám phá sự giao thoa giữa fractal và tỷ lệ vàng.",
+                audio: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav"
+            },
+            {
+                name: "Trefoil_Knotted_Ribbon1",
+                url: "https://maitheduy.github.io/Fractals/Trefoil_Knotted_Ribbon1",
+                image: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+                description: "Nút trefoil dạng ruy băng. Trực quan hóa các cấu trúc拓扑 học phức tạp trong không gian 3D.",
+                audio: "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav"
+            }
+        ];
+
+        // Tạo các ghi chú
+        function renderNotes(appsToRender = apps) {
+            const notesGrid = document.getElementById('notesGrid');
+            notesGrid.innerHTML = '';
+            
+            appsToRender.forEach(app => {
+                const noteCard = document.createElement('div');
+                noteCard.className = 'note-card';
+                
+                noteCard.innerHTML = `
+                    <div class="note-image" onclick="window.open('${app.url}', '_blank')">
+                        <img src="${app.image}" alt="${app.name}">
+                        <div class="note-badge">Fractal</div>
+                    </div>
+                    <div class="note-content">
+                        <h3 class="note-title" onclick="window.open('${app.url}', '_blank')">${app.name}</h3>
+                        <p class="note-description">${app.description}</p>
+                        <div class="note-footer">
+                            <button class="voice-btn" data-audio="${app.audio}">
+                                <i class="fas fa-play"></i> Nghe mô tả
+                            </button>
+                            <a href="${app.url}" target="_blank" class="note-link">
+                                Mở ứng dụng <i class="fas fa-external-link-alt"></i>
+                            </a>
+                        </div>
+                    </div>
+                `;
+                
+                notesGrid.appendChild(noteCard);
+            });
+            
+            // Thêm sự kiện cho các nút voice
+            document.querySelectorAll('.voice-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const audioSrc = this.getAttribute('data-audio');
+                    openAudioModal(audioSrc);
+                });
+            });
+        }
+
+        // Mở modal phát âm thanh
+        function openAudioModal(audioSrc) {
+            const modal = document.getElementById('audioModal');
+            const audioPlayer = document.getElementById('audioPlayer');
+            
+            audioPlayer.src = audioSrc;
+            modal.style.display = 'flex';
+            audioPlayer.play();
+        }
+
+        // Đóng modal
+        document.getElementById('closeModal').addEventListener('click', function() {
+            const modal = document.getElementById('audioModal');
+            const audioPlayer = document.getElementById('audioPlayer');
+            
+            audioPlayer.pause();
+            modal.style.display = 'none';
+        });
+
+        // Tìm kiếm ứng dụng
+        document.getElementById('searchInput').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const filteredApps = apps.filter(app => 
+                app.name.toLowerCase().includes(searchTerm) || 
+                app.description.toLowerCase().includes(searchTerm)
+            );
+            
+            renderNotes(filteredApps);
+            
+            if (filteredApps.length === 0) {
+                document.getElementById('notesGrid').innerHTML = `
+                    <div style="grid-column: 1/-1; text-align: center; padding: 40px;">
+                        <i class="fas fa-search" style="font-size: 3rem; color: #ccc; margin-bottom: 15px;"></i>
+                        <h3>Không tìm thấy ứng dụng phù hợp</h3>
+                        <p>Thử tìm kiếm với từ khóa khác</p>
+                    </div>
+                `;
+            }
+        });
+
+        // Hiển thị toast thông báo
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.display = 'block';
+            
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+
+        // Khởi tạo trang
+        document.addEventListener('DOMContentLoaded', function() {
+            renderNotes();
+            showToast('Chào mừng bạn đến với Fractal Notes!');
+        });
+
+        // Đóng modal khi click bên ngoài
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('audioModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+                document.getElementById('audioPlayer').pause();
+            }
+        });
+    </script>
+</body>
+</html>
